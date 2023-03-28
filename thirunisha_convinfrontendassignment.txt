@@ -1,0 +1,151 @@
+
+
+ASSIGNMENT:
+
+
+import React, { useState } from 'react';
+import { Card, Button, Modal, Input, Select } from 'antd';
+import { PlusOutlined } from '@ant-design/icons';
+import { useSelector, useDispatch } from 'react-redux';
+import { addCard, deleteCard, editCard, moveCard } from './actions';
+
+const { Option } = Select;
+
+const App = () => {
+  const [visible, setVisible] = useState(false);
+  const [name, setName] = useState('');
+  const [link, setLink] = useState('');
+  const [bucket, setBucket] = useState('');
+  const [editMode, setEditMode] = useState(false);
+  const [editId, setEditId] = useState(null);
+  const [history, setHistory] = useState([]);
+
+  const cards = useSelector(state => state.cards);
+  const buckets = useSelector(state => state.buckets);
+  const dispatch = useDispatch();
+
+  const handleOk = () => {
+    if (editMode) {
+      dispatch(editCard(editId, name, link, bucket));
+    } else {
+      dispatch(addCard(name, link, bucket));
+    }
+    setVisible(false);
+    setName('');
+    setLink('');
+    setBucket('');
+    setEditMode(false);
+    setEditId(null);
+  };
+
+  const handleCancel = () => {
+    setVisible(false);
+    setName('');
+    setLink('');
+    setBucket('');
+    setEditMode(false);
+    setEditId(null);
+  };
+
+  const handleDelete = id => {
+    dispatch(deleteCard(id));
+  };
+
+  const handleEdit = (id, name, link, bucket) => {
+    setVisible(true);
+    setName(name);
+    setLink(link);
+    setBucket(bucket);
+    setEditMode(true);
+    setEditId(id);
+  };
+
+  const handleMove = (id, bucket) => {
+    dispatch(moveCard(id, bucket));
+  };
+
+  const handlePlay = (name, link) => {
+    setHistory([...history, { name, link, time: new Date() }]);
+    window.open(link, '_blank');
+  };
+
+  return (
+    <div>
+      <div>
+        {buckets.map(bucket => (
+          <div key={bucket}>
+            <h3>{bucket}</h3>
+            {cards
+              .filter(card => card.bucket === bucket)
+              .map(card => (
+                <Card key={card.id}>
+                  <p>{card.name}</p>
+                   <Button onClick={() => handlePlay(card.name, card.link)}>
+                     Play
+                  </Button>
+                  <Button onClick={() => handleEdit(card.id, card.name, card.link, card.bucket)}>
+                    Edit
+                  </Button>
+                  <Button onClick={() => handleDelete(card.id)}>Delete</Button>
+                  <Select
+                    value={bucket}
+                    onChange={value => handleMove(card.id, value)}
+                  >
+                    {buckets.map(bucket => (
+                      <Option key={bucket} value={bucket}>
+                        {bucket}
+                      </Option>
+                    ))}
+                  </Select>
+                </Card>
+              ))}
+          </div>
+        ))}
+      </div>
+      <div>
+        <Button type="primary" onClick={() => setVisible(true)}>
+          <PlusOutlined /> Add Card
+        </Button>
+      </div>
+      <Modal
+        title="Add Card"
+        visible={visible}
+        onOk={handleOk}
+        onCancel={handleCancel}
+      >
+        <Input
+          placeholder="Name"
+          value={name}
+          onChange={e => setName(e.target.value)}
+        />
+        <Input
+          placeholder="Link"
+          value={link}
+          onChange={e => setLink(e.target.value)}
+        />
+        <Select
+          value={bucket}
+          onChange={value => setBucket(value)}
+        >
+          {buckets.map(bucket => (
+            <Option key={bucket} value={bucket}>
+              {bucket}
+            </Option>
+          ))}
+        </Select>
+      </Modal>
+      <div>
+        <h3>History</h3>
+        {history.map(item => (
+          <div key={item.time}>
+            <p>{item.name}</p>
+            <p>{item.link}</p>
+            <p>{item.time.toString()}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+export default App;
